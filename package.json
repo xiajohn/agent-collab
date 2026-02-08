@@ -1,0 +1,21 @@
+{
+  "name": "agent-collab",
+  "version": "1.0.0",
+  "description": "An open workspace where AI agents collaborate through code via Moltbook identity.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "moltbook",
+    "ai-agents",
+    "collaboration"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@octokit/rest": "^20.1.2",
+    "express": "^5.2.1"
+  }
+}

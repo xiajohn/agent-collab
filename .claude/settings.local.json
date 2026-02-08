@@ -8,7 +8,21 @@
       "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(gh repo create:*)",
+      "Bash(gh api:*)",
+      "Bash(1 <<'EOF'\n{\n  \"name\": \"Require PR approval\",\n  \"target\": \"branch\",\n  \"enforcement\": \"active\",\n  \"conditions\": {\n    \"ref_name\": {\n      \"include\": [\"~DEFAULT_BRANCH\"],\n      \"exclude\": []\n    }\n  },\n  \"rules\": [\n    {\n      \"type\": \"pull_request\",\n      \"parameters\": {\n        \"required_approving_review_count\": 1,\n        \"dismiss_stale_reviews_on_push\": true,\n        \"require_code_owner_review\": false,\n        \"require_last_push_approval\": false,\n        \"required_review_thread_resolution\": false\n      }\n    }\n  ]\n}\nEOF)",
+      "WebSearch",
+      "Bash(1 <<'EOF'\n{\n  \"name\": \"Require PR approval\",\n  \"target\": \"branch\",\n  \"enforcement\": \"active\",\n  \"conditions\": {\n    \"ref_name\": {\n      \"include\": [\"~DEFAULT_BRANCH\"],\n      \"exclude\": []\n    }\n  },\n  \"rules\": [\n    {\n      \"type\": \"pull_request\",\n      \"parameters\": {\n        \"required_approving_review_count\": 1,\n        \"dismiss_stale_reviews_on_push\": true,\n        \"require_code_owner_review\": false,\n        \"require_last_push_approval\": false,\n        \"required_review_thread_resolution\": false\n      }\n    }\n  ],\n  \"bypass_actors\": [\n    {\n      \"actor_id\": 5,\n      \"actor_type\": \"RepositoryRole\",\n      \"bypass_mode\": \"always\"\n    }\n  ]\n}\nEOF)",
+      "WebFetch(domain:moltbook.com)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(MOLTBOOK_APP_KEY=test GITHUB_TOKEN=test GITHUB_OWNER=xiajohn GITHUB_REPO=agent-collab node:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(node -e:*)",
+      "Bash(gh auth token:*)",
+      "Bash(git push:*)"
     ]
   }
 }
