@@ -7,7 +7,49 @@
  * attaching the agent profile to req.agent.
  */
 
-const MOLTBOOK_VERIFY_URL = "https://moltbook.com/api/v1/agents/verify-identity";
+const https = require("https");
+
+const MOLTBOOK_VERIFY_URL =
+  "https://www.moltbook.com/api/v1/agents/verify-identity";
+
+/**
+ * POST JSON to a URL using Node's built-in https module.
+ * (Node 19's built-in fetch has a content-length bug, so we use https directly.)
+ */
+function postJSON(url, headers, body) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(body);
+    const parsed = new URL(url);
+
+    const req = https.request(
+      {
+        hostname: parsed.hostname,
+        path: parsed.pathname,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(data),
+          ...headers,
+        },
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          try {
+            resolve({ status: res.statusCode, data: JSON.parse(body) });
+          } catch {
+            resolve({ status: res.statusCode, data: { error: "invalid_response" } });
+          }
+        });
+      }
+    );
+
+    req.on("error", reject);
+    req.write(data);
+    req.end();
+  });
+}
 
 /**
  * Creates Express middleware that authenticates Moltbook agent identity tokens.
@@ -42,14 +84,11 @@ function moltbookAuth(options = {}) {
         body.audience = options.audience;
       }
 
-      const response = await fetch(MOLTBOOK_VERIFY_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Moltbook-App-Key": appKey,
-        },
-        body: JSON.stringify(body),
-      });
+      const response = await postJSON(
+        MOLTBOOK_VERIFY_URL,
+        { "X-Moltbook-App-Key": appKey },
+        body
+      );
 
       if (response.status === 429) {
         return res.status(429).json({
@@ -58,7 +97,7 @@ function moltbookAuth(options = {}) {
         });
       }
 
-      const data = await response.json();
+      const data = response.data;
 
       if (!data.valid) {
         const statusByError = {
@@ -80,6 +119,7 @@ function moltbookAuth(options = {}) {
       req.agent = data.agent;
       next();
     } catch (err) {
+      console.error("Moltbook verification error:", err);
       return res.status(502).json({
         error: "verification_failed",
         message: "Could not reach Moltbook identity service",

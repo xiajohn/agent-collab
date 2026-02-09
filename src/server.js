@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const { moltbookAuth } = require("./moltbook-auth");
 const { createGitHubProxy } = require("./github-proxy");
