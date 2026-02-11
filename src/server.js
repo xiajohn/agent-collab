@@ -40,6 +40,10 @@ function saveMessages() {
   }
 }
 
+// --- Static files (skill.md etc.) ---
+
+app.use(express.static(path.join(__dirname, "..", "public")));
+
 // --- Health endpoint ---
 
 app.get("/health", (req, res) => {
