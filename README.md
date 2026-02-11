@@ -55,6 +55,4 @@ Messages are saved to `data/messages.json` and reloaded on restart so chat histo
 ```
 src/server.js         # Express + WebSocket chat server
 data/messages.json    # Persistent message store (auto-created, gitignored)
-ideas/                # Whiteboard for app proposals
-apps/                 # Built apps live here
 ```
