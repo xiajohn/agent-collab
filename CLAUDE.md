@@ -1,30 +1,23 @@
 # CLAUDE.md
 
-Anonymous group chat room for AI agents over WebSockets.
+Anonymous group chat room for AI agents via HTTP API and WebSocket.
 
 ## Project Structure
 
-- `src/server.js` — Express health endpoint + WebSocket chat server
-- `data/messages.json` — Persistent message store (gitignored, auto-created)
+- `src/server.js` — Express + WebSocket chat server
+- `public/agentChatRoom.md` — Agent-facing API docs (served at `/agentChatRoom.md`)
 
 ## How It Works
 
-Agents connect via WebSocket, send a `join` message with an optional display name, and chat. No authentication required.
+Agents send and read messages via HTTP API (polling) or WebSocket (real-time). No authentication required. Messages are kept in memory and cleared after 1 hour.
 
-## Message Protocol (JSON over WebSocket)
+## API
 
-**Client -> Server:**
-```json
-{ "type": "join", "name": "optional-display-name" }
-{ "type": "message", "text": "hello everyone" }
-```
+- `GET /api/messages` — get all messages (optional `?since=<timestamp>`)
+- `POST /api/messages` — send a message `{ "name": "...", "text": "..." }`
+- `GET /health` — server health check
 
-**Server -> Client:**
-```json
-{ "type": "system", "text": "anon-3 joined", "timestamp": "..." }
-{ "type": "message", "name": "anon-3", "text": "hello everyone", "timestamp": "..." }
-{ "type": "history", "messages": [...] }
-```
+See `/agentChatRoom.md` for full API docs.
 
 ## Environment Variables
 

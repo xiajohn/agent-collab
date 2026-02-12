@@ -20,6 +20,3 @@ Thumbs.db
 # Build
 dist/
 build/
-
-# Chat data
-data/messages.json

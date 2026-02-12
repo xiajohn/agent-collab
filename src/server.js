@@ -1,5 +1,4 @@
 require("dotenv").config();
-const fs = require("fs");
 const path = require("path");
 const http = require("http");
 const express = require("express");
@@ -9,48 +8,61 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const DATA_DIR = path.join(__dirname, "..", "data");
-const MESSAGES_FILE = path.join(DATA_DIR, "messages.json");
+const MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
 
-// --- Message persistence ---
+// --- Messages (in-memory only) ---
 
 let messages = [];
 
-function loadMessages() {
-  try {
-    if (fs.existsSync(MESSAGES_FILE)) {
-      const raw = fs.readFileSync(MESSAGES_FILE, "utf-8");
-      messages = JSON.parse(raw);
-      console.log(`Loaded ${messages.length} messages from disk`);
-    }
-  } catch (err) {
-    console.error("Failed to load messages:", err.message);
-    messages = [];
-  }
+function pruneOldMessages() {
+  const cutoff = new Date(Date.now() - MAX_AGE_MS).toISOString();
+  messages = messages.filter((m) => m.timestamp > cutoff);
 }
 
-function saveMessages() {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2));
-  } catch (err) {
-    console.error("Failed to save messages:", err.message);
-  }
-}
-
-// --- Static files (skill.md etc.) ---
+// --- Static files (agentChatRoom.md etc.) ---
 
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 // --- Health endpoint ---
 
 app.get("/health", (req, res) => {
-  const clientCount = [...wss.clients].filter(
+  const wsClients = [...wss.clients].filter(
     (c) => c.readyState === c.OPEN
   ).length;
-  res.json({ status: "ok", clients: clientCount });
+  res.json({ status: "ok", messages: messages.length, wsClients });
+});
+
+// --- HTTP API ---
+
+app.use(express.json());
+
+app.get("/api/messages", (req, res) => {
+  const since = req.query.since;
+  if (since) {
+    const filtered = messages.filter((m) => m.timestamp > since);
+    return res.json({ messages: filtered });
+  }
+  res.json({ messages });
+});
+
+app.post("/api/messages", (req, res) => {
+  const { name, text } = req.body;
+  if (!name || typeof name !== "string" || !name.trim()) {
+    return res.status(400).json({ error: "name is required" });
+  }
+  if (!text || typeof text !== "string" || !text.trim()) {
+    return res.status(400).json({ error: "text is required" });
+  }
+
+  const chatMsg = {
+    type: "message",
+    name: name.trim(),
+    text: text.trim(),
+    timestamp: new Date().toISOString(),
+  };
+  messages.push(chatMsg);
+  broadcast(chatMsg);
+  res.status(201).json(chatMsg);
 });
 
 // --- WebSocket chat ---
@@ -68,7 +80,6 @@ function broadcast(data) {
 }
 
 wss.on("connection", (ws) => {
-  // Client hasn't joined yet — wait for join message
   let joined = false;
 
   ws.on("message", (raw) => {
@@ -98,7 +109,6 @@ wss.on("connection", (ws) => {
         timestamp: new Date().toISOString(),
       };
       messages.push(sysMsg);
-      saveMessages();
       broadcast(sysMsg);
       return;
     }
@@ -122,7 +132,6 @@ wss.on("connection", (ws) => {
         timestamp: new Date().toISOString(),
       };
       messages.push(chatMsg);
-      saveMessages();
       broadcast(chatMsg);
       return;
     }
@@ -141,14 +150,15 @@ wss.on("connection", (ws) => {
       timestamp: new Date().toISOString(),
     };
     messages.push(sysMsg);
-    saveMessages();
     broadcast(sysMsg);
   });
 });
 
 // --- Start ---
 
-loadMessages();
+// Prune messages older than 1 hour every 10 minutes
+setInterval(pruneOldMessages, 10 * 60 * 1000);
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Chat server running on port ${PORT}`);
