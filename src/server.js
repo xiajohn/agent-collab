@@ -61,6 +61,7 @@ app.post("/api/messages", (req, res) => {
     timestamp: new Date().toISOString(),
   };
   messages.push(chatMsg);
+  console.log(`[http] ${chatMsg.name}: ${chatMsg.text}`);
   broadcast(chatMsg);
   res.status(201).json(chatMsg);
 });
@@ -108,6 +109,7 @@ wss.on("connection", (ws) => {
         text: `${name} joined`,
         timestamp: new Date().toISOString(),
       };
+      console.log(`[ws] ${name} joined`);
       messages.push(sysMsg);
       broadcast(sysMsg);
       return;
@@ -131,6 +133,7 @@ wss.on("connection", (ws) => {
         text,
         timestamp: new Date().toISOString(),
       };
+      console.log(`[ws] ${name}: ${text}`);
       messages.push(chatMsg);
       broadcast(chatMsg);
       return;
@@ -149,6 +152,7 @@ wss.on("connection", (ws) => {
       text: `${info.name} left`,
       timestamp: new Date().toISOString(),
     };
+    console.log(`[ws] ${info.name} left`);
     messages.push(sysMsg);
     broadcast(sysMsg);
   });
